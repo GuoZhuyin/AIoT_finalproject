@@ -2,7 +2,7 @@
 #include <PubSubClient.h>
 #include <PowerManagement.h>
 #include "DHT.h"
-#define DHTPIN 6    // Digital pin connected to the DHT sensor
+#define DHTPIN 6
 #define redpin 10
 #define greenpin 11
 #define bluepin 12
@@ -22,6 +22,8 @@ char clientId[] = "amebaClient";
 char username[] = "test";
 char password[] = "test";
 char publishTopic[] = "108022062";
+float h,t;
+int lightval, mq4val, fireval;
 String message ="";
 String tmpmessage ="";
 
@@ -32,8 +34,8 @@ DHT dht(DHTPIN, DHTTYPE);
 void gotData(){
   
   // Read data from DHT sensor
-  float h = dht.readHumidity();
-  float t = dht.readTemperature();
+  h = dht.readHumidity();
+  t = dht.readTemperature();
   if (isnan(h) || isnan(t)) {
     message = "Failed to read from DHT sensor!";
   } else {
@@ -41,7 +43,7 @@ void gotData(){
   }
   
   // Read data from light sensor
-  int lightval = analogRead(light);
+  lightval = analogRead(light);
   if (isnan(lightval)) {
     tmpmessage = "Failed to read from light sensor!";
   } else {
@@ -50,7 +52,7 @@ void gotData(){
   }
 
   // Read data from MQ4 sensor
-  int mq4val = digitalRead(mq4);
+  mq4val = digitalRead(mq4);
   if (isnan(mq4val)) {
     tmpmessage = "Failed to read from MQ4 sensor!";
   } else {
@@ -59,7 +61,7 @@ void gotData(){
   }
   
   // Read data from fire sensor
-  int fireval = digitalRead(fire);
+  fireval = digitalRead(fire);
   if (isnan(fireval)) {
     tmpmessage = "Failed to read from fire sensor!";
   } else {
@@ -76,9 +78,18 @@ void setColor(int red, int green, int blue)
   analogWrite(bluepin, blue);
 }
 
-void LEDcontrol()
-{
-  if(tval)
+void LEDcontrol(){
+  if(h > 80){
+    setColor(255, 0, 0);
+  }else if(h > 70){
+    setColor(255, 165, 0);
+  }else if(h > 60){
+    setColor(255, 255, 0);
+  }else if(h > 50){
+    setColor(0, 255, 0);
+  }else {
+    setColor(0, 0, 255);
+  }
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -156,12 +167,9 @@ void loop()
   if (now - lastPublish >= 10000)
   {
     lastPublish = now;
-    // DHTgotdata();
-    // mq4gotdata();
-    // lightgotdata();
     gotData();
+    LEDcontrol();
     client.publish(publishTopic, message.c_str());
     Serial.println("Message published.");
   }
-  LEDcontrol();
 }
